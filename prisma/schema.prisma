@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  name                 String?
+  password             String?   // Add this line
+  avatarUrl            String?
+  authProvider         String    // 'google', 'microsoft', 'email'
+  subscriptionType     String    @default("free") // 'free', 'monthly'
+  subscriptionEndDate  DateTime?
+  freeReportUsed       Boolean   @default(false)
+  stripeCustomerId     String?
+  razorpayCustomerId   String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  reports              Report[]
+  chatSessions         ChatSession[]
+  payments             Payment[]
+}
+
+model Report {
+  id                   String    @id @default(uuid())
+  userId               String
+  ideaInput            String
+  status               String    @default("pending") // 'pending', 'processing', 'completed', 'failed'
+  reportData           Json?
+  pdfUrl               String?
+  webSearchResults     Json?
+  isFreeReport         Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatSessions         ChatSession[]
+  payments             Payment[]
+}
+
+model ChatSession {
+  id                   String    @id @default(uuid())
+  userId               String
+  reportId             String
+  paymentId            String?
+  sessionType          String    // 'per_session', 'monthly'
+  status               String    @default("active") // 'active', 'expired', 'closed'
+  expiresAt            DateTime
+  createdAt            DateTime  @default(now())
+  
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report               Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  payment              Payment?  @relation(fields: [paymentId], references: [id])
+  messages             Message[]
+}
+
+model Message {
+  id                   String    @id @default(uuid())
+  sessionId            String
+  role                 String    // 'user', 'assistant'
+  content              String
+  tokensUsed           Int?
+  createdAt            DateTime  @default(now())
+  
+  session              ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                   String    @id @default(uuid())
+  userId               String
+  paymentType          String    // 'per_session', 'monthly'
+  amount               Float
+  currency             String    // 'INR', 'USD'
+  gateway              String    // 'stripe', 'razorpay'
+  gatewayPaymentId     String?
+  status               String    @default("pending") // 'pending', 'completed', 'failed', 'refunded'
+  reportId             String?
+  createdAt            DateTime  @default(now())
+  
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report               Report?   @relation(fields: [reportId], references: [id])
+  chatSessions         ChatSession[]
+}
