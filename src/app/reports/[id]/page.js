@@ -12,6 +12,7 @@ import CustomerPainPoints from '@/components/report/CustomerPainPoints';
 import ProsConsImprovements from '@/components/report/ProsConsImprovements';
 import Verdict from '@/components/report/Verdict';
 import Sources from '@/components/report/Sources';
+import { generateReportPDF } from '@/lib/pdf/generatePDF';
 
 export default function ReportPage() {
   const params = useParams();
@@ -41,8 +42,7 @@ export default function ReportPage() {
   };
 
   const handleDownloadPDF = () => {
-    // We'll implement this in the next task
-    alert('PDF download coming soon!');
+    generateReportPDF(report);
   };
 
   if (loading) {
