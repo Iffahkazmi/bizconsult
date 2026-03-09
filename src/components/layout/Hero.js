@@ -7,11 +7,12 @@ export default function Hero() {
   const router = useRouter();
   const [idea, setIdea] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (idea.trim()) {
       // Store idea in URL and redirect to login
       // User will be asked to login, then analysis will start
+      // In Phase 8 we'll add proper auth checking
       router.push(`/login?idea=${encodeURIComponent(idea.trim())}`);
     }
   };
