@@ -24,8 +24,7 @@ Return ONLY a JSON array of 8 search query strings, nothing else. No markdown, n
 Example format: ["query 1", "query 2", "query 3", ...]`;
 
     const response = await openai.chat.completions.create({
-      // model: 'gpt-4o-mini',  // ← OpenAI (comment out for testing)
-      model: 'mistralai/mistral-7b-instruct:free',  // ← OpenRouter (free for testing)
+      model: process.env.NVIDIA_API_KEY ? 'meta/llama-3.1-8b-instruct' : 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -42,8 +41,14 @@ Example format: ["query 1", "query 2", "query 3", ...]`;
 
     const content = response.choices[0].message.content.trim();
     
+    // Clean the response
+    let cleanContent = content;
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    
     // Parse the JSON response
-    const queries = JSON.parse(content);
+    const queries = JSON.parse(cleanContent);
     
     if (!Array.isArray(queries) || queries.length === 0) {
       throw new Error('Invalid queries format');

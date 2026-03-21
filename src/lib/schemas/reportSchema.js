@@ -40,7 +40,7 @@ export const reportSchema = z.object({
   sources: z.array(
     z.object({
       title: z.string(),
-      url: z.string().url(),
+      url: z.string().optional(),
     })
   ).optional(),
 });

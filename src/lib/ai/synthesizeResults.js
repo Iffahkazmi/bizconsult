@@ -9,7 +9,7 @@ export async function synthesizeResults(idea, searchResults) {
     const searchData = searchResults
       .map((result) => {
         const snippets = result.results
-          .slice(0, 5) // Top 5 results per query
+          .slice(0, 5)
           .map((r) => `- ${r.title}: ${r.snippet}`)
           .join('\n');
         return `Query: "${result.query}"\nResults:\n${snippets}`;
@@ -51,8 +51,7 @@ Extract and return a JSON object with:
 Return ONLY valid JSON, no markdown, no explanations.`;
 
     const response = await openai.chat.completions.create({
-      // model: 'gpt-4o-mini',  // ← OpenAI
-      model: 'mistralai/mistral-7b-instruct:free',  // ← OpenRouter (free)
+      model: process.env.NVIDIA_API_KEY ? 'meta/llama-3.1-70b-instruct' : 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -68,7 +67,13 @@ Return ONLY valid JSON, no markdown, no explanations.`;
     });
 
     const content = response.choices[0].message.content.trim();
-    const insights = JSON.parse(content);
+    
+    let cleanContent = content;
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    
+    const insights = JSON.parse(cleanContent);
 
     console.log('Synthesized insights:', insights);
     return insights;

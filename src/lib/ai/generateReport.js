@@ -10,7 +10,7 @@ async function retryWithBackoff(fn, maxRetries = 2) {
     } catch (error) {
       if (i === maxRetries - 1) throw error;
       
-      const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s...
+      const delay = Math.pow(2, i) * 1000;
       console.log(`Retry ${i + 1}/${maxRetries} after ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -96,8 +96,7 @@ Generate a detailed report as a JSON object with this EXACT structure:
 Be honest and data-driven. If the idea faces major challenges, say so. Return ONLY valid JSON.`;
 
       const response = await openai.chat.completions.create({
-        // model: 'gpt-4o-mini',  // ← OpenAI
-        model: 'mistralai/mistral-7b-instruct:free',  // ← OpenRouter (free)
+        model: process.env.NVIDIA_API_KEY ? 'meta/llama-3.1-70b-instruct' : 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -116,8 +115,8 @@ Be honest and data-driven. If the idea faces major challenges, say so. Return ON
       
       // Remove markdown code blocks if present
       let cleanContent = content;
-      if (content.startsWith('```')) {
-        cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       }
       
       const report = JSON.parse(cleanContent);
