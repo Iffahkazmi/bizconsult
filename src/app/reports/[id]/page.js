@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import ExecutiveSummary from '@/components/report/ExecutiveSummary';
 import IdeaOverview from '@/components/report/IdeaOverview';
@@ -16,9 +16,11 @@ import { generateReportPDF } from '@/lib/pdf/generatePDF';
 
 export default function ReportPage() {
   const params = useParams();
+  const router = useRouter();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     fetchReport();
@@ -43,6 +45,28 @@ export default function ReportPage() {
 
   const handleDownloadPDF = () => {
     generateReportPDF(report);
+  };
+
+  const handleStartChat = async () => {
+    setStartingChat(true);
+    try {
+      const response = await fetch('/api/chat/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId: params.id }),
+      });
+
+      const data = await response.json();
+      
+      if (data.sessionId) {
+        router.push(`/chat/${data.sessionId}`);
+      }
+    } catch (error) {
+      console.error('Failed to create chat session:', error);
+      alert('Failed to start chat. Please try again.');
+    } finally {
+      setStartingChat(false);
+    }
   };
 
   if (loading) {
@@ -150,8 +174,12 @@ export default function ReportPage() {
           <p className="text-blue-100 mb-6">
             Get personalized insights with our AI chat - ask follow-up questions and dive deeper into your analysis
           </p>
-          <button className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition">
-            Start AI Chat Session
+          <button 
+            onClick={handleStartChat}
+            disabled={startingChat}
+            className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition disabled:opacity-50"
+          >
+            {startingChat ? 'Starting Chat...' : 'Start AI Chat Session'}
           </button>
         </div>
       </div>
