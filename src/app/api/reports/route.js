@@ -12,6 +12,12 @@ export async function GET(request) {
       );
     }
 
+    // Get pagination params
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -23,19 +29,36 @@ export async function GET(request) {
       );
     }
 
+    // Get total count
+    const totalCount = await prisma.report.count({
+      where: { userId: user.id },
+    });
+
+    // Get paginated reports with only needed fields
     const reports = await prisma.report.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
       select: {
         id: true,
         ideaInput: true,
         status: true,
         reportData: true,
         createdAt: true,
+        isFreeReport: true,
       },
     });
 
-    return NextResponse.json({ reports });
+    return NextResponse.json({ 
+      reports,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    });
   } catch (error) {
     console.error('Fetch reports error:', error);
     return NextResponse.json(

@@ -2,6 +2,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
+// Validate environment variables (only in development)
+if (process.env.NODE_ENV === 'development') {
+  import('@/lib/env').then(({ validateEnv }) => validateEnv());
+}
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

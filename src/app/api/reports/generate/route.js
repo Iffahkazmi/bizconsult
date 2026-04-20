@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { analyzeIdea } from '@/lib/ai/analyzeIdea';
+import { reportLimiter } from '@/lib/ratelimit';
+import { validateBusinessIdea } from '@/lib/validation';
 
 export async function POST(request) {
   try {
@@ -14,15 +16,35 @@ export async function POST(request) {
       );
     }
 
+    // Rate limiting - 5 reports per hour per user
+    const identifier = session.user.email;
+    const { success, limit, remaining, reset } = await reportLimiter.check(5, identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded. You can generate 5 reports per hour.',
+          limit,
+          remaining,
+          reset: new Date(reset).toISOString(),
+        },
+        { status: 429 }
+      );
+    }
+
     // Get idea from request body
     const { idea } = await request.json();
 
-    if (!idea || idea.trim().length < 10) {
+    // Validate and sanitize input
+    const validation = validateBusinessIdea(idea);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Please provide a valid business idea (at least 10 characters)' },
+        { error: validation.error },
         { status: 400 }
       );
     }
+
+    const sanitizedIdea = validation.sanitized;
 
     // Get user from database
     const user = await prisma.user.findUnique({
@@ -43,7 +65,7 @@ export async function POST(request) {
     const report = await prisma.report.create({
       data: {
         userId: user.id,
-        ideaInput: idea.trim(),
+        ideaInput: sanitizedIdea,
         status: 'processing',
         isFreeReport: canUseFreeReport,
       },
@@ -57,9 +79,8 @@ export async function POST(request) {
       });
     }
 
-    // Start analysis in background (we'll use a simple approach for now)
-    // In production, you'd use a queue system like Bull or Inngest
-    analyzeIdeaBackground(report.id, idea);
+    // Start analysis in background
+    analyzeIdeaBackground(report.id, sanitizedIdea);
 
     return NextResponse.json({
       reportId: report.id,
