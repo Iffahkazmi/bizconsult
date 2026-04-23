@@ -1,0 +1,13 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow private pages
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /chat/
+Disallow: /reports/*/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://bizconsult.ai/sitemap.xml

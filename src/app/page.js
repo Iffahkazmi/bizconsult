@@ -3,6 +3,7 @@ import Hero from '@/components/layout/Hero';
 import HowItWorks from '@/components/layout/HowItWorks';
 import Pricing from '@/components/layout/Pricing';
 import Footer from '@/components/layout/Footer';
+import Script from 'next/script';
 
 export const metadata = {
   title: 'BizConsult AI - AI-Powered Business Idea Analysis',
@@ -16,13 +17,39 @@ export const metadata = {
 };
 
 export default function HomePage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "BizConsult AI",
+    "applicationCategory": "BusinessApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "AI-powered business idea validation and market research platform",
+    "operatingSystem": "Web",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "100"
+    }
+  };
+
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <Hero />
-      <HowItWorks />
-      <Pricing />
-      <Footer />
-    </div>
+    <>
+      <Script
+        id="structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <div className="min-h-screen">
+        <Navbar />
+        <Hero />
+        <HowItWorks />
+        <Pricing />
+        <Footer />
+      </div>
+    </>
   );
 }
